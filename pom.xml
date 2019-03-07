@@ -137,6 +137,7 @@
                 <configuration>
                     <instructions>
                         <Private-Package>scala.*</Private-Package>
+                        <Import-Package>!org.apache.felix.scr.annotations, *</Import-Package>
                     </instructions>
                 </configuration>
             </plugin>
@@ -158,7 +159,16 @@
                         <supportedProjectType>bundle</supportedProjectType>
                         <supportedProjectType>war</supportedProjectType>
                     </supportedProjectTypes>
+                    <scanClasses>true</scanClasses>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>generate-scr-scrdescriptor</id>
+                        <goals>
+                            <goal>scr</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.onosproject</groupId>

@@ -15,28 +15,59 @@
  */
 package t
 
-import org.onosproject.net.topology.TopologyService
+import java.util
+
+import org.onosproject.net.topology.{TopologyEvent, TopologyListener, TopologyService}
 import org.osgi.service.component.annotations.Activate
-import org.osgi.service.component.annotations.Component
+//import org.osgi.service.component.annotations.Component
+import org.apache.felix.scr.annotations.Component
 import org.osgi.service.component.annotations.Deactivate
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.apache.felix.scr.annotations.Reference
 import org.apache.felix.scr.annotations.ReferenceCardinality
+import org.onosproject.cfg.ComponentConfigService
+import org.onosproject.event.Event
+import org.onosproject.net.link.LinkEvent
+import org.osgi.service.component.ComponentContext
+
+import scala.collection.JavaConverters
 
 
 /**
   * Skeletal ONOS application component.
   */
-@Component(immediate = true) class AppComponent {
-  @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY) protected var topologyService: TopologyService = null
-  final private val log = LoggerFactory.getLogger(getClass)
+@Component(immediate = true)
+class AppComponent {
+    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY)
+    var topologyService: TopologyService = null
+    @Reference(cardinality = ReferenceCardinality.MANDATORY_UNARY) var cfgService: ComponentConfigService = null
 
-  @Activate def activate(): Unit = {
-    log.info("scala Started")
-  }
+    final private val log = LoggerFactory.getLogger(getClass)
 
-  @Deactivate def deactivate(): Unit = {
-    log.info("Stopped")
-  }
+    @Activate def activate(context:ComponentContext): Unit = {
+        cfgService.registerProperties(getClass)
+        topologyService.addListener(new MyTopologyListener)
+        log.info("scala Started")
+    }
+
+    @Deactivate def deactivate(): Unit = {
+        log.info("Stopped")
+    }
+}
+
+class MyTopologyListener extends TopologyListener {
+    final private val log = LoggerFactory.getLogger(getClass)
+
+    override def event(event: TopologyEvent): Unit = {
+        val reasons = JavaConverters.asScalaBuffer(event.reasons())
+        if (reasons != null) {
+            reasons.foreach {
+                case le: LinkEvent if le.`type`() == LinkEvent.Type.LINK_REMOVED => {
+                    log.info("link removed src=={}", le.subject().src().deviceId())
+                }
+                case _ =>
+            }
+        }
+    }
 }
